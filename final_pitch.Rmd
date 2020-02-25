@@ -1,0 +1,96 @@
+---
+title: "Iris classification"
+author: "Naruhiko"
+date: "2/25/2020"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(rpart)
+library(rpart.plot)
+library(ggplot2)
+```
+
+## Classificating Iris Species
+
+This project aimed to deploy a machine learning algorithm to classify a new observation entry.
+
+The algorithm received as input just *sepal length* and *petal length*.
+
+The results seems to be pretty acurate, given the position of the new observation in the plot.
+
+## Decision tree
+A decision tree is created with both variables and a subset of the original iris dataset.  
+The user can choose from 20% up to all the data available in the iris dataset to train the model.  
+This is the default tree, with 70% of the dataset used to create it.
+
+```{r, echo = FALSE, fig.align='center'}
+        smp_size <- floor(0.7 * nrow(iris))
+        
+        ## set the seed to make your partition reproducible
+        set.seed(123)
+        train_ind <- sample(seq_len(nrow(iris)), size = smp_size)
+        train <- iris[train_ind, ]
+        
+        model_tree <- rpart(Species ~ Sepal.Length + Petal.Length, data = train, method = 'class')
+        
+        tree <- prp(model_tree, 
+                         sub = "", type = 2, extra = 'auto', fallen.leaves = TRUE, cex = 1,
+                         left = FALSE, box.palette = 'auto', border.col = "#DBDBDC", varlen = 0,
+                         round = 0.5, split.font = 1, split.cex = 0.9, branch.col = "grey90", 
+                         branch.lty = 1, branch.type = 5, branch.tweak = 0.3, ge = " ≥ ",
+                         space = 0.5, split.yshift = -1, split.space = 0, split.box.col = NULL)
+```
+
+
+## New entry
+
+With the sliders, the user can create a new observation (diamond shaped) and see where it would be placed in the scatter plot.
+
+The script will automatically classify this new entry using the new tree, giving the color
+according to the its classification.
+```{r, echo = FALSE, fig.align='center'}
+
+x.extra <- 4.5
+y.extra <- 6.5
+pred <- predict(model_tree, newdata = data.frame(Sepal.Length = x.extra, 
+                                                 Petal.Length = y.extra),
+                                                 type = 'class')
+
+paleta <- c('#f26666' , "#a0a1a3", "#5ec752") #vermelho, cinza e verde
+        
+new_point_color <- ifelse(pred == 'virginica', paleta[3],
+                          ifelse(pred == 'versicolor', paleta[2], paleta[1]))
+        
+scatter <- ggplot(iris, aes(x = Sepal.Length, y = Petal.Length)) +
+              geom_point(aes(color = Species)) +
+              scale_color_manual(values = paleta) +
+              geom_point(aes(x.extra, y.extra),
+                         color = new_point_color,
+                         size = 5,
+                         alpha = 0.6,
+                         shape = 23) +
+              theme(panel.grid = element_blank(),
+                    panel.background = element_rect(fill = "white"),
+                    title = element_text(family = "Lato", colour = "#4D4D4D"),
+                    axis.text = element_text(family = "Lato", colour = "#4D4D4D", size = 8),
+                    axis.text.x = element_text(vjust = 2),
+                    legend.text = element_text(family = "Lato", colour = "#4D4D4D"),
+                    axis.ticks = element_line(colour = "#8F8F8F"),
+                    panel.border = element_blank(),
+                    axis.line = element_line(color = "#ebebeb", size = 0.25),
+                    strip.background = element_rect(fill = '#ebebeb'),
+                    strip.text = element_text(family = "Lato", colour = "#474747", size = 9),
+                    plot.margin = margin(t = 0.5, r = 0.5, b = 0.5, l = 0.5, unit = "cm")
+                  )
+print(scatter)
+```
+
+## Slide with Plot
+
+With this we can see the power of a decision tree as a machine learning algorithm or, at least,
+how easy it is to classify different iris species according to its flower caracteristics.
+
+Hope you have enjoyed!
+
